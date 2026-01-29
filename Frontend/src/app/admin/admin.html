@@ -1,0 +1,210 @@
+<div class="min-h-screen flex flex-col bg-gradient-to-b from-gray-100 to-gray-50">
+  <!-- Navbar -->
+  <nav
+    class="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b shadow-md px-6 py-4 flex justify-between items-center"
+  >
+    <h1 class="text-2xl md:text-3xl font-bold text-blue-600 tracking-tight">
+      Admin <span class="text-gray-700">Dashboard</span>
+    </h1>
+    <button
+      (click)="logout()"
+      class="bg-red-500 text-white px-5 py-2 rounded-xl shadow hover:bg-red-600 transition active:scale-95"
+    >
+      Logout
+    </button>
+  </nav>
+
+  <div class="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6 p-6">
+    <!-- Left: Create / Update Task -->
+    <div class="bg-white rounded-3xl shadow-xl p-6 sticky top-6 h-fit">
+      <h2 class="text-xl font-semibold mb-5 text-gray-800">
+        {{ editingTask ? '✏️ Update Task' : '➕ Create Task' }}
+      </h2>
+
+      <form
+        [formGroup]="taskForm"
+        (ngSubmit)="editingTask ? updateTask() : createTask()"
+        class="space-y-4"
+      >
+        <input
+          type="text"
+          placeholder="Task title"
+          formControlName="title"
+          class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400 outline-none"
+        />
+
+        <textarea
+          placeholder="Task description"
+          formControlName="description"
+          rows="3"
+          class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400 outline-none resize-none"
+        ></textarea>
+
+        <select
+          formControlName="status"
+          class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400 outline-none"
+        >
+          <option>Pending</option>
+          <option>In Progress</option>
+          <option>Completed</option>
+        </select>
+
+        <input
+          type="date"
+          formControlName="dueDate"
+          class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-400 outline-none"
+        />
+
+        <button
+          type="submit"
+          class="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 rounded-xl font-semibold hover:from-blue-600 hover:to-blue-700 transition active:scale-95"
+        >
+          {{ editingTask ? 'Update Task' : 'Add Task' }}
+        </button>
+
+        <button
+          *ngIf="editingTask"
+          type="button"
+          (click)="cancelEdit()"
+          class="w-full bg-gray-200 py-3 rounded-xl hover:bg-gray-300 transition"
+        >
+          Cancel
+        </button>
+      </form>
+    </div>
+
+    <!-- Right: Task List -->
+    <div class="lg:col-span-2 flex flex-col h-[calc(100vh-6rem)]">
+      <!-- Search -->
+      <div class="flex flex-col md:flex-row gap-3 mb-4">
+        <input
+          type="text"
+          [(ngModel)]="searchUsername"
+          (input)="searchUser()"
+          placeholder="Search by username"
+          class="flex-1 p-3 border rounded-xl focus:ring-2 focus:ring-blue-400 outline-none"
+        />
+        <button
+          (click)="searchUser()"
+          class="bg-blue-500 text-white px-6 py-3 rounded-xl hover:bg-blue-600 transition active:scale-95"
+        >
+          Search
+        </button>
+        <button
+          (click)="clearSearch()"
+          class="bg-gray-300 px-6 py-3 rounded-xl hover:bg-gray-400 transition"
+        >
+          Clear
+        </button>
+      </div>
+
+      <!-- Status Filters -->
+      <div class="flex gap-3 flex-wrap mb-4">
+        <button
+          (click)="filterStatus('')"
+          class="px-5 py-2 rounded-xl font-semibold text-sm
+                 text-cyan-800 bg-cyan-100 border border-cyan-300
+                 shadow hover:bg-cyan-200 transition"
+        >
+          All
+        </button>
+
+        <button
+          (click)="filterStatus('Pending')"
+          class="px-5 py-2 rounded-xl font-semibold text-sm
+                 text-yellow-800 bg-yellow-100 border border-yellow-300
+                 shadow hover:bg-yellow-200 transition"
+        >
+          Pending
+        </button>
+
+        <button
+          (click)="filterStatus('In Progress')"
+          class="px-5 py-2 rounded-xl font-semibold text-sm
+                 text-blue-800 bg-blue-100 border border-blue-300
+                 shadow hover:bg-blue-200 transition"
+        >
+          In Progress
+        </button>
+
+        <button
+          (click)="filterStatus('Completed')"
+          class="px-5 py-2 rounded-xl font-semibold text-sm
+                 text-green-800 bg-green-100 border border-green-300
+                 shadow hover:bg-green-200 transition"
+        >
+          Completed
+        </button>
+      </div>
+
+      <!-- Tasks -->
+      <div class="flex-1 overflow-y-auto space-y-4">
+        <div
+          *ngFor="let task of tasks; trackBy: trackByTaskId"
+          class="bg-white rounded-3xl shadow-lg p-6 hover:shadow-xl transition"
+        >
+          <div class="flex justify-between items-start">
+            <div>
+              <p class="text-xs text-gray-400">👤 {{ task.name || 'Unknown' }}</p>
+              <h3 class="text-lg font-semibold">{{ task.title }}</h3>
+            </div>
+            <span
+              class="text-xs font-medium px-3 py-1 rounded-full"
+              [ngClass]="{
+                'bg-yellow-100 text-yellow-700': task.status === 'Pending',
+                'bg-blue-100 text-blue-700': task.status === 'In Progress',
+                'bg-green-100 text-green-700': task.status === 'Completed'
+              }"
+            >
+              {{ task.status }}
+            </span>
+          </div>
+
+          <p class="text-gray-600 text-sm mt-3">{{ task.description }}</p>
+
+          <div class="flex justify-between items-center mt-5">
+            <p class="text-xs text-gray-400">⏰ {{ task.dueDate | date }}</p>
+            <div class="flex gap-2">
+              <button
+                (click)="editTask(task)"
+                class="px-4 py-2 bg-yellow-400 text-white rounded-xl hover:bg-yellow-500 transition"
+              >
+                Edit
+              </button>
+              <button
+                (click)="deleteTask(task._id!)"
+                class="px-4 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 transition"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pagination -->
+        <div
+          *ngIf="totalPages > 1"
+          class="flex justify-center items-center gap-3 mt-6"
+        >
+          <button
+            (click)="changePage(currentPage - 1)"
+            [disabled]="currentPage === 1"
+            class="px-4 py-2 bg-gray-200 rounded-xl hover:bg-gray-300 disabled:opacity-50"
+          >
+            Prev
+          </button>
+          <span class="text-sm text-gray-600">
+            Page {{ currentPage }} of {{ totalPages }}
+          </span>
+          <button
+            (click)="changePage(currentPage + 1)"
+            [disabled]="currentPage === totalPages"
+            class="px-4 py-2 bg-gray-200 rounded-xl hover:bg-gray-300 disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
